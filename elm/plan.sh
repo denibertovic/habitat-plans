@@ -10,6 +10,8 @@ pkg_deps=(
     core/gcc-libs/5.2.0
     core/libffi/3.2.1
     core/glibc
+    core/texinfo
+    core/ncurses/6.0
 )
 pkg_build_deps=(
     denibertovic/ghc/7.10.2/20170728150241
@@ -29,8 +31,10 @@ github_clone() {
 }
 
 do_build() {
-    export LD_LIBRARY_PATH="$(pkg_path_for gmp)/lib:$(pkg_path_for zlib)/lib:$(pkg_path_for libffi)/lib:$(pkg_path_for gcc-libs)/lib:$(pkg_path_for glibc)/lib"
     cd $CACHE_PATH
+    export LD_LIBRARY_PATH="$(pkg_path_for gmp)/lib:$(pkg_path_for zlib)/lib:$(pkg_path_for libffi)/lib:$(pkg_path_for gcc-libs)/lib:$(pkg_path_for glibc)/lib:$(pkg_path_for ncurses)/lib"
+    export LIBRARY_PATH="$(pkg_path_for gmp)/lib:$(pkg_path_for zlib)/lib:$(pkg_path_for libffi)/lib:$(pkg_path_for gcc-libs)/lib:$(pkg_path_for glibc)/lib:$(pkg_path_for ncurses)/lib"
+
     github_clone elm-lang elm-compiler ${pkg_version}
     github_clone elm-lang elm-package ${pkg_version}
     github_clone elm-lang elm-make ${pkg_version}
@@ -49,9 +53,9 @@ do_build() {
     # install only dependencies
     cabal install -j --only-dependencies --ghc-options="-w" \
         --extra-include-dirs=$(pkg_path_for zlib)/include \
-        --extra-include-dirs=$(pkg_path_for gmp)/include \
         --extra-lib-dirs=$(pkg_path_for zlib)/lib \
         --extra-lib-dirs=$(pkg_path_for gmp)/lib \
+        --extra-lib-dirs=$(pkg_path_for ncurses)/lib \
         elm-compiler \
         elm-package \
         elm-make \
@@ -61,21 +65,23 @@ do_build() {
     # install all except reactor
     cabal install -j --ghc-options="-XFlexibleContexts" \
         --extra-include-dirs=$(pkg_path_for zlib)/include \
-        --extra-include-dirs=$(pkg_path_for gmp)/include \
         --extra-lib-dirs=$(pkg_path_for zlib)/lib \
         --extra-lib-dirs=$(pkg_path_for gmp)/lib \
+        --extra-lib-dirs=$(pkg_path_for ncurses)/lib \
         elm-compiler \
         elm-package \
         elm-make \
         elm-repl
 
-    # and finally install elm-reactor
-    cabal install -j \
-        --extra-include-dirs=$(pkg_path_for zlib)/include \
-        --extra-include-dirs=$(pkg_path_for gmp)/include \
-        --extra-lib-dirs=$(pkg_path_for zlib)/lib \
-        --extra-lib-dirs=$(pkg_path_for gmp)/lib \
-        elm-reactor
+    # # and finally install elm-reactor
+    # # TODO: This currently doesn't compile but it probably not needed
+    # # except for interacive development
+    # cabal install -j \
+    #     --extra-include-dirs=$(pkg_path_for zlib)/include \
+    #     --extra-lib-dirs=$(pkg_path_for zlib)/lib \
+    #     --extra-lib-dirs=$(pkg_path_for gmp)/lib \
+    #     --extra-lib-dirs=$(pkg_path_for ncurses)/lib \
+    #     elm-reactor
 
 }
 
